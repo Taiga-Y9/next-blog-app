@@ -1,0 +1,17 @@
+# [Ctrl]+[Alt]+[R] で各セクションを実行
+
+@service_id = ydmz08sacr
+@api_key = dtDlGgLdPhiuX0CyD07665JPmm3VKsM0zLlN
+@post_id = 4682_3xubym
+
+### 全投稿の取得
+GET https://{{service_id}}.microcms.io/api/v1/posts
+X-MICROCMS-API-KEY : {{api_key}}
+
+### 全カテゴリの取得
+GET https://{{service_id}}.microcms.io/api/v1/categories
+X-MICROCMS-API-KEY : {{api_key}}
+
+### 単投稿の取得
+GET https://{{service_id}}.microcms.io/api/v1/posts/{{post_id}}
+X-MICROCMS-API-KEY : {{api_key}}
