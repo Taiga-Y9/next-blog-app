@@ -5,7 +5,8 @@ export type Post = {
   id: string;
   title: string;
   content: string;
+  coverImageURL: string; // 変更
   createdAt: string;
-  categories: Category[];
-  coverImage: CoverImage;
+  updatedAt: string; // 追加
+  categories?: Category[]; // オプショナルに（一覧取得時には含まれない）
 };

@@ -23,3 +23,5 @@ Content-Type: application/json
 {
   "name": "カテゴリA"
 }
+### 投稿記事一覧の取得
+GET http://localhost:3000/api/posts
