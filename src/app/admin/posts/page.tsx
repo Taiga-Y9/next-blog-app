@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
   faTrash,
   faEdit,
   faPlus,
+  faSearch,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -26,11 +28,23 @@ type PostApiResponse = {
   }[];
 };
 
+type Category = {
+  id: string;
+  name: string;
+};
+
 const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
   const [posts, setPosts] = useState<PostApiResponse[] | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // 検索・フィルター用のState
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const fetchPosts = async () => {
     try {
@@ -43,11 +57,13 @@ const Page: React.FC = () => {
 
       if (!res.ok) {
         setPosts(null);
-        throw new Error(`${res.status}: ${res.statusText}`);
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || `${res.status}: ${res.statusText}`);
       }
 
       const apiResBody = (await res.json()) as PostApiResponse[];
       setPosts(apiResBody);
+      setFetchErrorMsg(null);
     } catch (error) {
       const errorMsg =
         error instanceof Error
@@ -57,6 +73,21 @@ const Page: React.FC = () => {
       setFetchErrorMsg(errorMsg);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories", {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error("カテゴリの取得に失敗:", error);
     }
   };
 
@@ -89,9 +120,51 @@ const Page: React.FC = () => {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchText("");
+    setSelectedCategoryId("");
+    setStartDate("");
+    setEndDate("");
+  };
+
   useEffect(() => {
     fetchPosts();
+    fetchCategories();
   }, []);
+
+  // フィルタリング処理
+  const filteredPosts = useMemo(() => {
+    if (!posts) return null;
+
+    return posts.filter((post) => {
+      // テキスト検索（タイトルと本文）
+      if (searchText) {
+        const searchLower = searchText.toLowerCase();
+        const matchTitle = post.title.toLowerCase().includes(searchLower);
+        const matchContent = post.content.toLowerCase().includes(searchLower);
+        if (!matchTitle && !matchContent) return false;
+      }
+
+      // カテゴリフィルター
+      if (selectedCategoryId) {
+        const hasCategory = post.categories.some(
+          (cat) => cat.category.id === selectedCategoryId,
+        );
+        if (!hasCategory) return false;
+      }
+
+      // 日付範囲フィルター
+      const postDate = dayjs(post.createdAt);
+      if (startDate && postDate.isBefore(dayjs(startDate), "day")) {
+        return false;
+      }
+      if (endDate && postDate.isAfter(dayjs(endDate), "day")) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [posts, searchText, selectedCategoryId, startDate, endDate]);
 
   if (isLoading) {
     return (
@@ -107,6 +180,8 @@ const Page: React.FC = () => {
   }
 
   const dtFmt = "YYYY-MM-DD HH:mm";
+  const hasActiveFilters =
+    searchText || selectedCategoryId || startDate || endDate;
 
   return (
     <main>
@@ -124,13 +199,103 @@ const Page: React.FC = () => {
         </Link>
       </div>
 
-      {posts.length === 0 ? (
+      {/* 検索・フィルターセクション */}
+      <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="font-bold text-slate-700">
+            <FontAwesomeIcon icon={faSearch} className="mr-2" />
+            検索・フィルター
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              <FontAwesomeIcon icon={faTimes} className="mr-1" />
+              フィルターをクリア
+            </button>
+          )}
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {/* テキスト検索 */}
+          <div>
+            <label className="mb-1 block text-sm font-bold">
+              タイトル・本文で検索
+            </label>
+            <input
+              type="text"
+              placeholder="検索キーワードを入力..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+
+          {/* カテゴリフィルター */}
+          <div>
+            <label className="mb-1 block text-sm font-bold">
+              カテゴリで絞り込み
+            </label>
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="">すべてのカテゴリ</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 日付範囲 */}
+          <div>
+            <label className="mb-1 block text-sm font-bold">開始日</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-bold">終了日</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 検索結果表示 */}
+      <div className="mb-3 text-sm text-gray-600">
+        {filteredPosts && (
+          <>
+            検索結果: <span className="font-bold">{filteredPosts.length}</span>{" "}
+            件
+            {posts.length !== filteredPosts.length && (
+              <span className="ml-1">（全 {posts.length} 件中）</span>
+            )}
+          </>
+        )}
+      </div>
+
+      {filteredPosts && filteredPosts.length === 0 ? (
         <div className="text-gray-500">
-          （投稿記事は1個も作成されていません）
+          {hasActiveFilters
+            ? "検索条件に一致する投稿記事が見つかりませんでした。"
+            : "（投稿記事は1個も作成されていません）"}
         </div>
       ) : (
         <div className="space-y-3">
-          {posts.map((post) => (
+          {filteredPosts?.map((post) => (
             <div
               key={post.id}
               className="rounded-lg border border-slate-300 p-4"

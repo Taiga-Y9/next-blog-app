@@ -6,6 +6,7 @@ import {
   faTrash,
   faEdit,
   faPlus,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -15,6 +16,9 @@ type Category = {
   name: string;
   createdAt: string;
   updatedAt: string;
+  _count: {
+    posts: number;
+  };
 };
 
 const Page: React.FC = () => {
@@ -51,9 +55,19 @@ const Page: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`「${name}」を削除しますか？`)) {
-      return;
+  const handleDelete = async (id: string, name: string, postCount: number) => {
+    if (postCount > 0) {
+      if (
+        !confirm(
+          `「${name}」は現在 ${postCount} 件の記事で使用されています。\n削除すると、これらの記事からこのカテゴリが削除されます。\n本当に削除しますか？`,
+        )
+      ) {
+        return;
+      }
+    } else {
+      if (!confirm(`「${name}」を削除しますか？`)) {
+        return;
+      }
     }
 
     try {
@@ -97,10 +111,17 @@ const Page: React.FC = () => {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
+  const totalPosts = categories.reduce((sum, cat) => sum + cat._count.posts, 0);
+
   return (
     <main>
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-2xl font-bold">カテゴリの管理</div>
+        <div>
+          <div className="text-2xl font-bold">カテゴリの管理</div>
+          <div className="mt-1 text-sm text-gray-600">
+            全 {categories.length} カテゴリ / 使用中: {totalPosts} 件の記事
+          </div>
+        </div>
         <Link
           href="/admin/categories/new"
           className={twMerge(
@@ -124,7 +145,20 @@ const Page: React.FC = () => {
               key={category.id}
               className="flex items-center justify-between rounded-lg border border-slate-300 p-3"
             >
-              <div className="text-lg font-bold">{category.name}</div>
+              <div className="flex items-center space-x-3">
+                <div className="text-lg font-bold">{category.name}</div>
+                <div className="flex items-center space-x-1">
+                  {category._count.posts > 0 ? (
+                    <div className="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                      {category._count.posts} 件の記事で使用中
+                    </div>
+                  ) : (
+                    <div className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-500">
+                      未使用
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex space-x-2">
                 <Link
                   href={`/admin/categories/${category.id}`}
@@ -137,11 +171,19 @@ const Page: React.FC = () => {
                   編集
                 </Link>
                 <button
-                  onClick={() => handleDelete(category.id, category.name)}
+                  onClick={() =>
+                    handleDelete(
+                      category.id,
+                      category.name,
+                      category._count.posts,
+                    )
+                  }
                   disabled={deletingId === category.id}
                   className={twMerge(
                     "rounded-md px-3 py-1.5 text-sm font-bold",
-                    "bg-red-500 text-white hover:bg-red-600",
+                    category._count.posts > 0
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "bg-red-500 text-white hover:bg-red-600",
                     deletingId === category.id && "opacity-50",
                   )}
                 >
@@ -152,6 +194,12 @@ const Page: React.FC = () => {
                     />
                   ) : (
                     <>
+                      {category._count.posts > 0 && (
+                        <FontAwesomeIcon
+                          icon={faExclamationTriangle}
+                          className="mr-1"
+                        />
+                      )}
                       <FontAwesomeIcon icon={faTrash} className="mr-1" />
                       削除
                     </>

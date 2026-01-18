@@ -5,6 +5,13 @@ import { NextResponse, NextRequest } from "next/server";
 export const GET = async (req: NextRequest) => {
   try {
     const categories = await prisma.category.findMany({
+      include: {
+        _count: {
+          select: {
+            posts: true, // 各カテゴリに紐づく投稿数をカウント
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc", // 降順 (新しい順)
       },
