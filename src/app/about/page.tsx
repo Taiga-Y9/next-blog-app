@@ -26,11 +26,7 @@ const Page: React.FC = () => {
       <div className="space-y-3">
         <div className="md:flex md:justify-center">
           <div className="font-bold md:w-1/6 md:text-center">名 前</div>
-          <div className="md:w-5/6">寝屋川 タヌキ (Tanuki Neyagawa)</div>
-        </div>
-        <div className="md:flex md:justify-center">
-          <div className="font-bold md:w-1/6 md:text-center">連絡先</div>
-          <div className="md:w-5/6">tanuki.neyagawa@example.com</div>
+          <div className="md:w-5/6">YT</div>
         </div>
         <div className="md:flex md:justify-center">
           <div className="font-bold md:w-1/6 md:text-center">
@@ -38,10 +34,10 @@ const Page: React.FC = () => {
           </div>
           <div className="md:w-5/6">
             <a
-              href="https://google.com"
+              href="https://taiga-y9.github.io/portfolio/"
               className="mr-1 text-blue-500 underline"
             >
-              タヌキ&apos;s Portfolio
+              YT&apos;s Portfolio
             </a>
             (GitHub Pages)
           </div>
