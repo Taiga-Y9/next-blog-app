@@ -164,6 +164,8 @@ next-blog-app/
 ├── prisma/
 │   ├── schema.prisma      # データベーススキーマ
 │   └── seed.ts            # シードデータ
+├── public/
+│   └── images
 ├── src/
 │   ├── app/
 │   │   ├── _components/   # 共通コンポーネント
@@ -198,6 +200,7 @@ next-blog-app/
 ├── public/
 │   └── images/
 ├── package.json
+├── package-lock.json
 ├── tsconfig.json
 ├── tailwind.config.ts
 └── README.md
