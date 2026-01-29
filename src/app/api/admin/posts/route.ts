@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import type { Post } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
+import { supabase } from "@/utils/supabase";
 
 type RequestBody = {
   title: string;
@@ -11,6 +12,12 @@ type RequestBody = {
 };
 
 export const POST = async (req: NextRequest) => {
+  // JWTトークンの検証・認証 (失敗したら 401 Unauthorized を返す)
+  const token = req.headers.get("Authorization") ?? "";
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 401 });
+
   try {
     const requestBody: RequestBody = await req.json();
     const { title, content, coverImageURL, categoryIds } = requestBody;
