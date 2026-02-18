@@ -1,91 +1,60 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import type { Post } from "@/generated/prisma/client";
-import { Prisma } from "@/generated/prisma/client";
 
-type RouteParams = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+type RouteParams = { params: Promise<{ id: string }> };
 
 type RequestBody = {
   title: string;
   content: string;
   coverImageURL: string;
+  status: string;
+  playTime: number;
+  rating: number;
   categoryIds: string[];
 };
 
-export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
+export const PUT = async (req: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = await routeParams.params;
-    const requestBody: RequestBody = await req.json();
-    const { title, content, coverImageURL, categoryIds } = requestBody;
+    const { id } = await params;
+    const {
+      title,
+      content,
+      coverImageURL,
+      status,
+      playTime,
+      rating,
+      categoryIds,
+    }: RequestBody = await req.json();
 
-    // 既存の投稿記事を更新
-    const post: Post = await prisma.post.update({
+    const post = await prisma.post.update({
       where: { id },
       data: {
         title,
         content,
         coverImageURL,
-        // 既存のカテゴリ関連を全削除して新しく作成
+        status: status as any,
+        playTime: playTime ?? 0,
+        rating: rating ?? 0,
         categories: {
           deleteMany: {},
-          create: categoryIds.map((categoryId) => ({
-            categoryId,
-          })),
+          create: categoryIds.map((categoryId) => ({ categoryId })),
         },
       },
     });
-
     return NextResponse.json(post);
   } catch (error) {
     console.error(error);
-
-    // 外部キー制約違反のエラーをキャッチ
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2003") {
-        return NextResponse.json(
-          { error: "指定されたカテゴリの一部が存在しません" },
-          { status: 400 },
-        );
-      }
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { error: "指定された投稿記事が見つかりません" },
-          { status: 404 },
-        );
-      }
-    }
-
-    return NextResponse.json(
-      { error: "投稿記事の更新に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "更新に失敗しました" }, { status: 500 });
   }
 };
 
-export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
+export const DELETE = async (_req: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = await routeParams.params;
-    const post: Post = await prisma.post.delete({ where: { id } });
-    return NextResponse.json({ msg: `「${post.title}」を削除しました。` });
+    const { id } = await params;
+    const post = await prisma.post.delete({ where: { id } });
+    return NextResponse.json({ msg: `「${post.title}」を削除しました` });
   } catch (error) {
     console.error(error);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { error: "指定された投稿記事が見つかりません" },
-          { status: 404 },
-        );
-      }
-    }
-
-    return NextResponse.json(
-      { error: "投稿記事の削除に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "削除に失敗しました" }, { status: 500 });
   }
 };

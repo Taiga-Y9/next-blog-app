@@ -20,8 +20,20 @@ export type PostModel = runtime.Types.Result.DefaultSelection<Prisma.$PostPayloa
 
 export type AggregatePost = {
   _count: PostCountAggregateOutputType | null
+  _avg: PostAvgAggregateOutputType | null
+  _sum: PostSumAggregateOutputType | null
   _min: PostMinAggregateOutputType | null
   _max: PostMaxAggregateOutputType | null
+}
+
+export type PostAvgAggregateOutputType = {
+  playTime: number | null
+  rating: number | null
+}
+
+export type PostSumAggregateOutputType = {
+  playTime: number | null
+  rating: number | null
 }
 
 export type PostMinAggregateOutputType = {
@@ -29,6 +41,9 @@ export type PostMinAggregateOutputType = {
   title: string | null
   content: string | null
   coverImageURL: string | null
+  status: $Enums.GameStatus | null
+  playTime: number | null
+  rating: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -38,6 +53,9 @@ export type PostMaxAggregateOutputType = {
   title: string | null
   content: string | null
   coverImageURL: string | null
+  status: $Enums.GameStatus | null
+  playTime: number | null
+  rating: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -47,17 +65,33 @@ export type PostCountAggregateOutputType = {
   title: number
   content: number
   coverImageURL: number
+  status: number
+  playTime: number
+  rating: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
 
+export type PostAvgAggregateInputType = {
+  playTime?: true
+  rating?: true
+}
+
+export type PostSumAggregateInputType = {
+  playTime?: true
+  rating?: true
+}
+
 export type PostMinAggregateInputType = {
   id?: true
   title?: true
   content?: true
   coverImageURL?: true
+  status?: true
+  playTime?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -67,6 +101,9 @@ export type PostMaxAggregateInputType = {
   title?: true
   content?: true
   coverImageURL?: true
+  status?: true
+  playTime?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -76,6 +113,9 @@ export type PostCountAggregateInputType = {
   title?: true
   content?: true
   coverImageURL?: true
+  status?: true
+  playTime?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -119,6 +159,18 @@ export type PostAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: PostAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: PostSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: PostMinAggregateInputType
@@ -149,6 +201,8 @@ export type PostGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: PostCountAggregateInputType | true
+  _avg?: PostAvgAggregateInputType
+  _sum?: PostSumAggregateInputType
   _min?: PostMinAggregateInputType
   _max?: PostMaxAggregateInputType
 }
@@ -158,9 +212,14 @@ export type PostGroupByOutputType = {
   title: string
   content: string
   coverImageURL: string
+  status: $Enums.GameStatus
+  playTime: number
+  rating: number
   createdAt: Date
   updatedAt: Date
   _count: PostCountAggregateOutputType | null
+  _avg: PostAvgAggregateOutputType | null
+  _sum: PostSumAggregateOutputType | null
   _min: PostMinAggregateOutputType | null
   _max: PostMaxAggregateOutputType | null
 }
@@ -188,9 +247,13 @@ export type PostWhereInput = {
   title?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.StringFilter<"Post"> | string
   coverImageURL?: Prisma.StringFilter<"Post"> | string
+  status?: Prisma.EnumGameStatusFilter<"Post"> | $Enums.GameStatus
+  playTime?: Prisma.IntFilter<"Post"> | number
+  rating?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   categories?: Prisma.PostCategoryListRelationFilter
+  playLogs?: Prisma.PlayLogListRelationFilter
 }
 
 export type PostOrderByWithRelationInput = {
@@ -198,9 +261,13 @@ export type PostOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   coverImageURL?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   categories?: Prisma.PostCategoryOrderByRelationAggregateInput
+  playLogs?: Prisma.PlayLogOrderByRelationAggregateInput
 }
 
 export type PostWhereUniqueInput = Prisma.AtLeast<{
@@ -211,9 +278,13 @@ export type PostWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Post"> | string
   content?: Prisma.StringFilter<"Post"> | string
   coverImageURL?: Prisma.StringFilter<"Post"> | string
+  status?: Prisma.EnumGameStatusFilter<"Post"> | $Enums.GameStatus
+  playTime?: Prisma.IntFilter<"Post"> | number
+  rating?: Prisma.IntFilter<"Post"> | number
   createdAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Post"> | Date | string
   categories?: Prisma.PostCategoryListRelationFilter
+  playLogs?: Prisma.PlayLogListRelationFilter
 }, "id">
 
 export type PostOrderByWithAggregationInput = {
@@ -221,11 +292,16 @@ export type PostOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   coverImageURL?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PostCountOrderByAggregateInput
+  _avg?: Prisma.PostAvgOrderByAggregateInput
   _max?: Prisma.PostMaxOrderByAggregateInput
   _min?: Prisma.PostMinOrderByAggregateInput
+  _sum?: Prisma.PostSumOrderByAggregateInput
 }
 
 export type PostScalarWhereWithAggregatesInput = {
@@ -236,6 +312,9 @@ export type PostScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Post"> | string
   content?: Prisma.StringWithAggregatesFilter<"Post"> | string
   coverImageURL?: Prisma.StringWithAggregatesFilter<"Post"> | string
+  status?: Prisma.EnumGameStatusWithAggregatesFilter<"Post"> | $Enums.GameStatus
+  playTime?: Prisma.IntWithAggregatesFilter<"Post"> | number
+  rating?: Prisma.IntWithAggregatesFilter<"Post"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Post"> | Date | string
 }
@@ -245,9 +324,13 @@ export type PostCreateInput = {
   title: string
   content: string
   coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   categories?: Prisma.PostCategoryCreateNestedManyWithoutPostInput
+  playLogs?: Prisma.PlayLogCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateInput = {
@@ -255,9 +338,13 @@ export type PostUncheckedCreateInput = {
   title: string
   content: string
   coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   categories?: Prisma.PostCategoryUncheckedCreateNestedManyWithoutPostInput
+  playLogs?: Prisma.PlayLogUncheckedCreateNestedManyWithoutPostInput
 }
 
 export type PostUpdateInput = {
@@ -265,9 +352,13 @@ export type PostUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categories?: Prisma.PostCategoryUpdateManyWithoutPostNestedInput
+  playLogs?: Prisma.PlayLogUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateInput = {
@@ -275,9 +366,13 @@ export type PostUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categories?: Prisma.PostCategoryUncheckedUpdateManyWithoutPostNestedInput
+  playLogs?: Prisma.PlayLogUncheckedUpdateManyWithoutPostNestedInput
 }
 
 export type PostCreateManyInput = {
@@ -285,6 +380,9 @@ export type PostCreateManyInput = {
   title: string
   content: string
   coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -294,6 +392,9 @@ export type PostUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -303,6 +404,9 @@ export type PostUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -312,8 +416,16 @@ export type PostCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   coverImageURL?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PostAvgOrderByAggregateInput = {
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
 }
 
 export type PostMaxOrderByAggregateInput = {
@@ -321,6 +433,9 @@ export type PostMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   coverImageURL?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -330,8 +445,16 @@ export type PostMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   coverImageURL?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PostSumOrderByAggregateInput = {
+  playTime?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
 }
 
 export type PostScalarRelationFilter = {
@@ -343,8 +466,34 @@ export type StringFieldUpdateOperationsInput = {
   set?: string
 }
 
+export type EnumGameStatusFieldUpdateOperationsInput = {
+  set?: $Enums.GameStatus
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type PostCreateNestedOneWithoutPlayLogsInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutPlayLogsInput, Prisma.PostUncheckedCreateWithoutPlayLogsInput>
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutPlayLogsInput
+  connect?: Prisma.PostWhereUniqueInput
+}
+
+export type PostUpdateOneRequiredWithoutPlayLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.PostCreateWithoutPlayLogsInput, Prisma.PostUncheckedCreateWithoutPlayLogsInput>
+  connectOrCreate?: Prisma.PostCreateOrConnectWithoutPlayLogsInput
+  upsert?: Prisma.PostUpsertWithoutPlayLogsInput
+  connect?: Prisma.PostWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PostUpdateToOneWithWhereWithoutPlayLogsInput, Prisma.PostUpdateWithoutPlayLogsInput>, Prisma.PostUncheckedUpdateWithoutPlayLogsInput>
 }
 
 export type PostCreateNestedOneWithoutCategoriesInput = {
@@ -361,13 +510,85 @@ export type PostUpdateOneRequiredWithoutCategoriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PostUpdateToOneWithWhereWithoutCategoriesInput, Prisma.PostUpdateWithoutCategoriesInput>, Prisma.PostUncheckedUpdateWithoutCategoriesInput>
 }
 
+export type PostCreateWithoutPlayLogsInput = {
+  id?: string
+  title: string
+  content: string
+  coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  categories?: Prisma.PostCategoryCreateNestedManyWithoutPostInput
+}
+
+export type PostUncheckedCreateWithoutPlayLogsInput = {
+  id?: string
+  title: string
+  content: string
+  coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  categories?: Prisma.PostCategoryUncheckedCreateNestedManyWithoutPostInput
+}
+
+export type PostCreateOrConnectWithoutPlayLogsInput = {
+  where: Prisma.PostWhereUniqueInput
+  create: Prisma.XOR<Prisma.PostCreateWithoutPlayLogsInput, Prisma.PostUncheckedCreateWithoutPlayLogsInput>
+}
+
+export type PostUpsertWithoutPlayLogsInput = {
+  update: Prisma.XOR<Prisma.PostUpdateWithoutPlayLogsInput, Prisma.PostUncheckedUpdateWithoutPlayLogsInput>
+  create: Prisma.XOR<Prisma.PostCreateWithoutPlayLogsInput, Prisma.PostUncheckedCreateWithoutPlayLogsInput>
+  where?: Prisma.PostWhereInput
+}
+
+export type PostUpdateToOneWithWhereWithoutPlayLogsInput = {
+  where?: Prisma.PostWhereInput
+  data: Prisma.XOR<Prisma.PostUpdateWithoutPlayLogsInput, Prisma.PostUncheckedUpdateWithoutPlayLogsInput>
+}
+
+export type PostUpdateWithoutPlayLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.PostCategoryUpdateManyWithoutPostNestedInput
+}
+
+export type PostUncheckedUpdateWithoutPlayLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.PostCategoryUncheckedUpdateManyWithoutPostNestedInput
+}
+
 export type PostCreateWithoutCategoriesInput = {
   id?: string
   title: string
   content: string
   coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  playLogs?: Prisma.PlayLogCreateNestedManyWithoutPostInput
 }
 
 export type PostUncheckedCreateWithoutCategoriesInput = {
@@ -375,8 +596,12 @@ export type PostUncheckedCreateWithoutCategoriesInput = {
   title: string
   content: string
   coverImageURL: string
+  status?: $Enums.GameStatus
+  playTime?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  playLogs?: Prisma.PlayLogUncheckedCreateNestedManyWithoutPostInput
 }
 
 export type PostCreateOrConnectWithoutCategoriesInput = {
@@ -400,8 +625,12 @@ export type PostUpdateWithoutCategoriesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  playLogs?: Prisma.PlayLogUpdateManyWithoutPostNestedInput
 }
 
 export type PostUncheckedUpdateWithoutCategoriesInput = {
@@ -409,8 +638,12 @@ export type PostUncheckedUpdateWithoutCategoriesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   coverImageURL?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
+  playTime?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  playLogs?: Prisma.PlayLogUncheckedUpdateManyWithoutPostNestedInput
 }
 
 
@@ -420,10 +653,12 @@ export type PostUncheckedUpdateWithoutCategoriesInput = {
 
 export type PostCountOutputType = {
   categories: number
+  playLogs: number
 }
 
 export type PostCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categories?: boolean | PostCountOutputTypeCountCategoriesArgs
+  playLogs?: boolean | PostCountOutputTypeCountPlayLogsArgs
 }
 
 /**
@@ -443,15 +678,26 @@ export type PostCountOutputTypeCountCategoriesArgs<ExtArgs extends runtime.Types
   where?: Prisma.PostCategoryWhereInput
 }
 
+/**
+ * PostCountOutputType without action
+ */
+export type PostCountOutputTypeCountPlayLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PlayLogWhereInput
+}
+
 
 export type PostSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   title?: boolean
   content?: boolean
   coverImageURL?: boolean
+  status?: boolean
+  playTime?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   categories?: boolean | Prisma.Post$categoriesArgs<ExtArgs>
+  playLogs?: boolean | Prisma.Post$playLogsArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["post"]>
 
@@ -460,6 +706,9 @@ export type PostSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   title?: boolean
   content?: boolean
   coverImageURL?: boolean
+  status?: boolean
+  playTime?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["post"]>
@@ -469,6 +718,9 @@ export type PostSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   title?: boolean
   content?: boolean
   coverImageURL?: boolean
+  status?: boolean
+  playTime?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["post"]>
@@ -478,13 +730,17 @@ export type PostSelectScalar = {
   title?: boolean
   content?: boolean
   coverImageURL?: boolean
+  status?: boolean
+  playTime?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "coverImageURL" | "createdAt" | "updatedAt", ExtArgs["result"]["post"]>
+export type PostOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "coverImageURL" | "status" | "playTime" | "rating" | "createdAt" | "updatedAt", ExtArgs["result"]["post"]>
 export type PostInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categories?: boolean | Prisma.Post$categoriesArgs<ExtArgs>
+  playLogs?: boolean | Prisma.Post$playLogsArgs<ExtArgs>
   _count?: boolean | Prisma.PostCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PostIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -494,12 +750,16 @@ export type $PostPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Post"
   objects: {
     categories: Prisma.$PostCategoryPayload<ExtArgs>[]
+    playLogs: Prisma.$PlayLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     title: string
     content: string
     coverImageURL: string
+    status: $Enums.GameStatus
+    playTime: number
+    rating: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["post"]>
@@ -897,6 +1157,7 @@ readonly fields: PostFieldRefs;
 export interface Prisma__PostClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   categories<T extends Prisma.Post$categoriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$categoriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PostCategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  playLogs<T extends Prisma.Post$playLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Post$playLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlayLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -930,6 +1191,9 @@ export interface PostFieldRefs {
   readonly title: Prisma.FieldRef<"Post", 'String'>
   readonly content: Prisma.FieldRef<"Post", 'String'>
   readonly coverImageURL: Prisma.FieldRef<"Post", 'String'>
+  readonly status: Prisma.FieldRef<"Post", 'GameStatus'>
+  readonly playTime: Prisma.FieldRef<"Post", 'Int'>
+  readonly rating: Prisma.FieldRef<"Post", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Post", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Post", 'DateTime'>
 }
@@ -1341,6 +1605,30 @@ export type Post$categoriesArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.PostCategoryScalarFieldEnum | Prisma.PostCategoryScalarFieldEnum[]
+}
+
+/**
+ * Post.playLogs
+ */
+export type Post$playLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PlayLog
+   */
+  select?: Prisma.PlayLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PlayLog
+   */
+  omit?: Prisma.PlayLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlayLogInclude<ExtArgs> | null
+  where?: Prisma.PlayLogWhereInput
+  orderBy?: Prisma.PlayLogOrderByWithRelationInput | Prisma.PlayLogOrderByWithRelationInput[]
+  cursor?: Prisma.PlayLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PlayLogScalarFieldEnum | Prisma.PlayLogScalarFieldEnum[]
 }
 
 /**

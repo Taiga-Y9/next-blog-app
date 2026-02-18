@@ -5,283 +5,323 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
+import type { GameStatus } from "@/app/_types/Post";
+import { STATUS_MAP } from "@/app/_types/Post";
 
-// カテゴリをフェッチしたときのレスポンスのデータ型
-type CategoryApiResponse = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-};
+type SelectableCategory = { id: string; name: string; isSelect: boolean };
 
-// 投稿記事のカテゴリ選択用のデータ型
-type SelectableCategory = {
-  id: string;
-  name: string;
-  isSelect: boolean;
-};
+const STATUSES: GameStatus[] = ["UNPLAYED", "PLAYING", "COMPLETED", "PERFECT"];
 
-// 投稿記事の新規作成のページ
 const Page: React.FC = () => {
+  const router = useRouter();
+  const { token } = useAuth();
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState("");
-
-  const { token } = useAuth(); // トークンの取得
-  const router = useRouter();
-
-  // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
   const [checkableCategories, setCheckableCategories] = useState<
     SelectableCategory[] | null
   >(null);
+  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
 
-  // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [coverImageURL, setCoverImageURL] = useState("");
+  const [status, setStatus] = useState<GameStatus>("UNPLAYED");
+  const [playTimeH, setPlayTimeH] = useState(0);
+  const [playTimeM, setPlayTimeM] = useState(0);
+  const [rating, setRating] = useState(0);
+
   useEffect(() => {
-    // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
-
-        // フェッチ処理の本体
-        const requestUrl = "/api/categories";
-        const res = await fetch(requestUrl, {
+        const res = await fetch("/api/categories", {
           method: "GET",
           cache: "no-store",
         });
-
-        // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
-        if (!res.ok) {
-          setCheckableCategories(null);
-          throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
-        }
-
-        // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
-        const apiResBody = (await res.json()) as CategoryApiResponse[];
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
         setCheckableCategories(
-          apiResBody.map((body) => ({
-            id: body.id,
-            name: body.name,
+          data.map((c: { id: string; name: string }) => ({
+            ...c,
             isSelect: false,
           })),
         );
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error
-            ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-            : `予期せぬエラーが発生しました ${error}`;
-        console.error(errorMsg);
-        setFetchErrorMsg(errorMsg);
+      } catch {
+        setFetchErrorMsg("カテゴリの取得に失敗しました");
       } finally {
-        // 成功した場合も失敗した場合もローディング状態を解除
         setIsLoading(false);
       }
     };
-
     fetchCategories();
   }, []);
 
-  // チェックボックスの状態 (State) を更新する関数
-  const switchCategoryState = (categoryId: string) => {
-    if (!checkableCategories) return;
-
+  const toggleCategory = (id: string) =>
     setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category,
-      ),
+      (prev) =>
+        prev?.map((c) => (c.id === id ? { ...c, isSelect: !c.isSelect } : c)) ??
+        null,
     );
-  };
 
-  const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにタイトルのバリデーション処理を追加する
-    setNewTitle(e.target.value);
-  };
-
-  const updateNewContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // ここに本文のバリデーション処理を追加する
-    setNewContent(e.target.value);
-  };
-
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImageURL(e.target.value);
-  };
-
-  // フォームの送信処理
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // この処理をしないとページがリロードされるので注意
-
-    // ▼ 追加: トークンが取得できない場合はアラートを表示して処理中断
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!token) {
-      window.alert("予期せぬ動作：トークンが取得できません。");
+      alert("ログインが必要です");
       return;
     }
-
     setIsSubmitting(true);
-
-    // ▼▼ 追加 ウェブAPI (/api/admin/posts) にPOSTリクエストを送信する処理
     try {
-      const requestBody = {
-        title: newTitle,
-        content: newContent,
-        coverImageURL: newCoverImageURL,
-        categoryIds: checkableCategories
-          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
-          : [],
-      };
-      const requestUrl = "/api/admin/posts";
-      console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
-      const res = await fetch(requestUrl, {
+      const res = await fetch("/api/admin/posts", {
         method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token, // ◀ 追加
-        },
-        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json", Authorization: token },
+        body: JSON.stringify({
+          title,
+          content,
+          coverImageURL,
+          status,
+          playTime: playTimeH * 60 + playTimeM,
+          rating,
+          categoryIds:
+            checkableCategories?.filter((c) => c.isSelect).map((c) => c.id) ??
+            [],
+        }),
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
-      }
-
-      const postResponse = await res.json();
-      setIsSubmitting(false);
-      router.push(`/posts/${postResponse.id}`); // 投稿記事の詳細ページに移動
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿記事のPOSTリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const created = await res.json();
+      router.push(`/posts/${created.id}`);
+    } catch {
+      alert("登録に失敗しました");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+      <div className="mt-8 text-center text-slate-400">
+        <FontAwesomeIcon icon={faSpinner} className="mr-2 animate-spin" />
         Loading...
       </div>
     );
-  }
-
-  if (!checkableCategories) {
-    return <div className="text-red-500">{fetchErrorMsg}</div>;
-  }
+  if (!checkableCategories)
+    return <div className="text-red-400">{fetchErrorMsg}</div>;
 
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の新規作成</div>
+    <main className="pb-10">
+      <h1 className="page-title-accent mb-1 text-2xl font-black text-white">
+        🎮 ゲームを追加
+      </h1>
+      <p className="mt-2 mb-6 text-xs text-slate-500">
+        プレイしたゲームをライブラリに登録しましょう
+      </p>
 
       {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800 px-6 py-4 shadow-2xl">
             <FontAwesomeIcon
               icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
+              className="animate-spin text-purple-400"
             />
-            <div className="flex items-center text-gray-500">処理中...</div>
+            <span className="font-bold text-slate-300">登録中...</span>
           </div>
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+        className={twMerge(
+          "space-y-5",
+          isSubmitting && "pointer-events-none opacity-50",
+        )}
       >
-        <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
+        {/* タイトル */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            ゲームタイトル <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
-            id="title"
-            name="title"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newTitle}
-            onChange={updateNewTitle}
-            placeholder="タイトルを記入してください"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="例: ゼルダの伝説 ティアーズ オブ ザ キングダム"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="content" className="block font-bold">
-            本文
+        {/* ステータス */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            ステータス
           </label>
-          <textarea
-            id="content"
-            name="content"
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={newContent}
-            onChange={updateNewContent}
-            placeholder="本文を記入してください"
-            required
-          />
+          <div className="flex flex-wrap gap-2">
+            {STATUSES.map((s) => {
+              const info = STATUS_MAP[s];
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatus(s)}
+                  className={twMerge(
+                    "rounded-full border px-3 py-1.5 text-sm font-bold transition-all",
+                    status === s
+                      ? "border-purple-400 bg-purple-500 text-white shadow-md shadow-purple-500/20"
+                      : "border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-500",
+                  )}
+                >
+                  {info.emoji} {info.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold">
-            カバーイメージ (URL)
+        {/* 評価 */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            評価
           </label>
-          <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
-            placeholder="カバーイメージのURLを記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setRating(s === rating ? 0 : s)}
+                className={twMerge(
+                  "text-2xl transition-transform hover:scale-110 focus:outline-none",
+                  s <= rating ? "text-amber-400" : "text-slate-700",
+                )}
+              >
+                ★
+              </button>
+            ))}
+            {rating > 0 && (
+              <span className="ml-1 self-center text-xs text-slate-500">
+                {rating} / 5
+              </span>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end">
+        {/* プレイ時間 */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            プレイ時間
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              value={playTimeH}
+              onChange={(e) =>
+                setPlayTimeH(Math.max(0, parseInt(e.target.value) || 0))
+              }
+              className="w-20 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-center text-white focus:border-purple-500 focus:outline-none"
+            />
+            <span className="text-sm text-slate-400">時間</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={playTimeM}
+              onChange={(e) =>
+                setPlayTimeM(
+                  Math.max(0, Math.min(59, parseInt(e.target.value) || 0)),
+                )
+              }
+              className="w-20 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-center text-white focus:border-purple-500 focus:outline-none"
+            />
+            <span className="text-sm text-slate-400">分</span>
+          </div>
+        </div>
+
+        {/* カバー画像URL */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            カバー画像URL
+          </label>
+          <input
+            type="url"
+            value={coverImageURL}
+            onChange={(e) => setCoverImageURL(e.target.value)}
+            placeholder="https://example.com/game.jpg"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+          />
+        </div>
+
+        {/* プラットフォーム/カテゴリ */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            プラットフォーム / ジャンル
+          </label>
+          {checkableCategories.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {checkableCategories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleCategory(c.id)}
+                  className={twMerge(
+                    "rounded-lg border px-3 py-1.5 text-sm font-bold transition-all",
+                    c.isSelect
+                      ? "border-indigo-400 bg-indigo-600 text-white"
+                      : "border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-500",
+                  )}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              カテゴリがありません。
+              <Link
+                href="/admin/categories/new"
+                className="ml-1 text-indigo-400 hover:underline"
+              >
+                こちらから追加できます
+              </Link>
+            </p>
+          )}
+        </div>
+
+        {/* メモ・感想 */}
+        <div>
+          <label className="mb-1.5 block text-sm font-bold text-slate-300">
+            メモ・感想
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="攻略メモ、感想、印象に残ったシーンなど自由に..."
+            rows={4}
+            className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+          />
+        </div>
+
+        {/* 送信ボタン */}
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-bold text-slate-300 transition-colors hover:bg-slate-600"
+          >
+            キャンセル
+          </button>
           <button
             type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed",
-            )}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !title}
+            className="rounded-xl bg-purple-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-colors hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            記事を投稿
+            追加する 🎮
           </button>
         </div>
       </form>
     </main>
   );
 };
+
+// Link のインポートが必要
+import Link from "next/link";
 
 export default Page;

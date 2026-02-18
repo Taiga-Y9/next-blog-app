@@ -31,9 +31,7 @@ const formatPlayTime = (minutes: number): string => {
   return `${h}h${m}m`;
 };
 
-// 元の PostSummary.tsx と同じ Props・構造を維持しつつ、
-// ダークテーマ + ゲームライブラリ向けデザインに変更
-const PostSummary: React.FC<Props> = ({ post }) => {
+const GameCard: React.FC<Props> = ({ post }) => {
   const statusInfo = STATUS_MAP[post.status] ?? STATUS_MAP["UNPLAYED"];
 
   return (
@@ -54,7 +52,7 @@ const PostSummary: React.FC<Props> = ({ post }) => {
               🎮
             </div>
           )}
-          {/* ステータスバッジをカバー画像右上に重ねて表示 */}
+          {/* ステータスバッジ */}
           <div className="absolute top-2 right-2">
             <span
               className={twMerge("status-badge shadow-md", statusInfo.color)}
@@ -67,7 +65,7 @@ const PostSummary: React.FC<Props> = ({ post }) => {
         {/* カード本文 */}
         <div className="p-3">
           {/* タイトル */}
-          <div className="mb-2 line-clamp-2 text-sm leading-snug font-black text-white transition-colors group-hover:text-purple-300">
+          <div className="mb-2 line-clamp-2 text-sm leading-snug font-black text-white">
             {post.title}
           </div>
 
@@ -106,4 +104,4 @@ const PostSummary: React.FC<Props> = ({ post }) => {
   );
 };
 
-export default PostSummary;
+export default GameCard;

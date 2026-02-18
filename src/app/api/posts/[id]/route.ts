@@ -1,16 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
-type RouteParams = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+type RouteParams = { params: Promise<{ id: string }> };
 
-export const GET = async (req: NextRequest, routeParams: RouteParams) => {
+export const GET = async (_req: NextRequest, { params }: RouteParams) => {
   try {
-    const { id } = await routeParams.params;
-
+    const { id } = await params;
     const post = await prisma.post.findUnique({
       where: { id },
       select: {
@@ -18,34 +13,36 @@ export const GET = async (req: NextRequest, routeParams: RouteParams) => {
         title: true,
         content: true,
         coverImageURL: true,
+        status: true,
+        playTime: true,
+        rating: true,
         createdAt: true,
         updatedAt: true,
         categories: {
+          select: { category: { select: { id: true, name: true } } },
+        },
+        playLogs: {
           select: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            id: true,
+            postId: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
           },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
 
-    if (!post) {
+    if (!post)
       return NextResponse.json(
-        { error: `id='${id}'の投稿記事は見つかりませんでした` },
+        { error: "ゲームが見つかりません" },
         { status: 404 },
       );
-    }
 
     return NextResponse.json(post);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "投稿記事の取得に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
   }
 };

@@ -385,6 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Post: 'Post',
+  PlayLog: 'PlayLog',
   Category: 'Category',
   PostCategory: 'PostCategory'
 } as const
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "post" | "category" | "postCategory"
+    modelProps: "post" | "playLog" | "category" | "postCategory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -477,6 +478,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PostCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PostCountAggregateOutputType> | number
+        }
+      }
+    }
+    PlayLog: {
+      payload: Prisma.$PlayLogPayload<ExtArgs>
+      fields: Prisma.PlayLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlayLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlayLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        findFirst: {
+          args: Prisma.PlayLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlayLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        findMany: {
+          args: Prisma.PlayLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>[]
+        }
+        create: {
+          args: Prisma.PlayLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        createMany: {
+          args: Prisma.PlayLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlayLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>[]
+        }
+        delete: {
+          args: Prisma.PlayLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        update: {
+          args: Prisma.PlayLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlayLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlayLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlayLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlayLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayLogPayload>
+        }
+        aggregate: {
+          args: Prisma.PlayLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlayLog>
+        }
+        groupBy: {
+          args: Prisma.PlayLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlayLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlayLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlayLogCountAggregateOutputType> | number
         }
       }
     }
@@ -672,11 +747,25 @@ export const PostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   coverImageURL: 'coverImageURL',
+  status: 'status',
+  playTime: 'playTime',
+  rating: 'rating',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
+
+
+export const PlayLogScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  content: 'content',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlayLogScalarFieldEnum = (typeof PlayLogScalarFieldEnum)[keyof typeof PlayLogScalarFieldEnum]
 
 
 export const CategoryScalarFieldEnum = {
@@ -737,16 +826,16 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'DateTime'
+ * Reference to a field of type 'GameStatus'
  */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+export type EnumGameStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameStatus'>
     
 
 
 /**
- * Reference to a field of type 'DateTime[]'
+ * Reference to a field of type 'GameStatus[]'
  */
-export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+export type ListEnumGameStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameStatus[]'>
     
 
 
@@ -761,6 +850,34 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -859,6 +976,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   post?: Prisma.PostOmit
+  playLog?: Prisma.PlayLogOmit
   category?: Prisma.CategoryOmit
   postCategory?: Prisma.PostCategoryOmit
 }

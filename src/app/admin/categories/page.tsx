@@ -1,94 +1,45 @@
 "use client";
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinner,
-  faTrash,
-  faEdit,
-  faPlus,
-  faExclamationTriangle,
-} from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
 
-type Category = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  _count: {
-    posts: number;
-  };
-};
+type Category = { id: string; name: string; _count: { posts: number } };
 
 const Page: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     try {
-      setIsLoading(true);
-      const requestUrl = "/api/categories";
-      const res = await fetch(requestUrl, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        setCategories(null);
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      const apiResBody = (await res.json()) as Category[];
-      setCategories(apiResBody);
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-          : `予期せぬエラーが発生しました ${error}`;
-      console.error(errorMsg);
-      setFetchErrorMsg(errorMsg);
+      const res = await fetch("/api/categories", { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      setCategories(await res.json());
+    } catch {
+      setFetchError("取得に失敗しました");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (id: string, name: string, postCount: number) => {
-    if (postCount > 0) {
-      if (
-        !confirm(
-          `「${name}」は現在 ${postCount} 件の記事で使用されています。\n削除すると、これらの記事からこのカテゴリが削除されます。\n本当に削除しますか？`,
-        )
-      ) {
-        return;
-      }
-    } else {
-      if (!confirm(`「${name}」を削除しますか？`)) {
-        return;
-      }
-    }
-
+  const handleDelete = async (id: string, name: string, count: number) => {
+    const msg =
+      count > 0
+        ? `「${name}」は${count}本のゲームで使用中です。削除しますか？`
+        : `「${name}」を削除しますか？`;
+    if (!confirm(msg)) return;
+    setDeletingId(id);
     try {
-      setDeletingId(id);
       const res = await fetch(`/api/admin/categories/${id}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      alert("削除しました");
+      if (!res.ok) throw new Error();
       await fetchCategories();
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `削除に失敗しました: ${error.message}`
-          : `予期せぬエラーが発生しました`;
-      console.error(errorMsg);
-      alert(errorMsg);
+    } catch {
+      alert("削除に失敗しました");
     } finally {
       setDeletingId(null);
     }
@@ -98,111 +49,79 @@ const Page: React.FC = () => {
     fetchCategories();
   }, []);
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+      <div className="mt-8 text-center text-slate-400">
+        <FontAwesomeIcon icon={faSpinner} className="mr-2 animate-spin" />
         Loading...
       </div>
     );
-  }
-
-  if (!categories) {
-    return <div className="text-red-500">{fetchErrorMsg}</div>;
-  }
-
-  const totalPosts = categories.reduce((sum, cat) => sum + cat._count.posts, 0);
+  if (!categories) return <div className="text-red-400">{fetchError}</div>;
 
   return (
-    <main>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <div className="text-2xl font-bold">カテゴリの管理</div>
-          <div className="mt-1 text-sm text-gray-600">
-            全 {categories.length} カテゴリ / 使用中: {totalPosts} 件の記事
-          </div>
-        </div>
+    <main className="pb-10">
+      <div className="mt-2 mb-5 flex items-center justify-between">
+        <h1 className="page-title-accent text-2xl font-black text-white">
+          カテゴリ管理
+        </h1>
         <Link
           href="/admin/categories/new"
-          className={twMerge(
-            "rounded-md px-4 py-2 font-bold",
-            "bg-indigo-500 text-white hover:bg-indigo-600",
-          )}
+          className="flex items-center gap-1.5 rounded-xl bg-purple-500 px-4 py-2 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-colors hover:bg-purple-400"
         >
-          <FontAwesomeIcon icon={faPlus} className="mr-1" />
-          新規作成
+          <FontAwesomeIcon icon={faPlus} />
+          追加
         </Link>
       </div>
 
       {categories.length === 0 ? (
-        <div className="text-gray-500">
-          （カテゴリは1個も作成されていません）
+        <div className="py-12 text-center text-slate-500">
+          カテゴリがまだありません
         </div>
       ) : (
         <div className="space-y-2">
-          {categories.map((category) => (
+          {categories.map((cat) => (
             <div
-              key={category.id}
-              className="flex items-center justify-between rounded-lg border border-slate-300 p-3"
+              key={cat.id}
+              className="flex items-center justify-between rounded-2xl border border-slate-700/50 bg-slate-800/60 px-4 py-3"
             >
-              <div className="flex items-center space-x-3">
-                <div className="text-lg font-bold">{category.name}</div>
-                <div className="flex items-center space-x-1">
-                  {category._count.posts > 0 ? (
-                    <div className="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
-                      {category._count.posts} 件の記事で使用中
-                    </div>
-                  ) : (
-                    <div className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-500">
-                      未使用
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Link
-                  href={`/admin/categories/${category.id}`}
+              <div className="flex items-center gap-3">
+                <span className="font-black text-white">{cat.name}</span>
+                <span
                   className={twMerge(
-                    "rounded-md px-3 py-1.5 text-sm font-bold",
-                    "bg-blue-500 text-white hover:bg-blue-600",
+                    "rounded-full px-2.5 py-0.5 text-xs font-bold",
+                    cat._count.posts > 0
+                      ? "border border-indigo-700/50 bg-indigo-900/60 text-indigo-300"
+                      : "bg-slate-700 text-slate-500",
                   )}
                 >
-                  <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                  {cat._count.posts}本
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/admin/categories/${cat.id}`}
+                  className="rounded-xl bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:bg-slate-600"
+                >
                   編集
                 </Link>
                 <button
                   onClick={() =>
-                    handleDelete(
-                      category.id,
-                      category.name,
-                      category._count.posts,
-                    )
+                    handleDelete(cat.id, cat.name, cat._count.posts)
                   }
-                  disabled={deletingId === category.id}
+                  disabled={deletingId === cat.id}
                   className={twMerge(
-                    "rounded-md px-3 py-1.5 text-sm font-bold",
-                    category._count.posts > 0
-                      ? "bg-orange-500 text-white hover:bg-orange-600"
-                      : "bg-red-500 text-white hover:bg-red-600",
-                    deletingId === category.id && "opacity-50",
+                    "rounded-xl px-3 py-1.5 text-xs font-bold transition-colors",
+                    "border border-red-800/50 bg-red-900/40 text-red-400 hover:bg-red-900/70",
+                    deletingId === cat.id && "opacity-50",
                   )}
                 >
-                  {deletingId === category.id ? (
+                  {deletingId === cat.id ? (
                     <FontAwesomeIcon
                       icon={faSpinner}
                       className="animate-spin"
                     />
                   ) : (
-                    <>
-                      {category._count.posts > 0 && (
-                        <FontAwesomeIcon
-                          icon={faExclamationTriangle}
-                          className="mr-1"
-                        />
-                      )}
-                      <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                      削除
-                    </>
+                    <FontAwesomeIcon icon={faTrash} />
                   )}
                 </button>
               </div>

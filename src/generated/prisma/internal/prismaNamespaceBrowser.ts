@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Post: 'Post',
+  PlayLog: 'PlayLog',
   Category: 'Category',
   PostCategory: 'PostCategory'
 } as const
@@ -77,11 +78,25 @@ export const PostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   coverImageURL: 'coverImageURL',
+  status: 'status',
+  playTime: 'playTime',
+  rating: 'rating',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
+
+
+export const PlayLogScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  content: 'content',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlayLogScalarFieldEnum = (typeof PlayLogScalarFieldEnum)[keyof typeof PlayLogScalarFieldEnum]
 
 
 export const CategoryScalarFieldEnum = {

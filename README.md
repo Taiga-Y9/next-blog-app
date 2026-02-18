@@ -1,286 +1,207 @@
-# Next.js Blog App
+# 🎮 GameLib - マイゲームライブラリ
 
-Next.js (App Router) と Prisma を使用したブログアプリケーションです。記事の作成・編集・削除、カテゴリ管理、検索・フィルター機能などを備えています。
+ブログアプリをベースにした、個人用ゲームライブラリ管理システムです。
 
-## 目次
+## ✨ 主な機能
 
-- [機能一覧](#機能一覧)
-- [技術スタック](#技術スタック)
-- [セットアップ](#セットアップ)
-- [使い方](#使い方)
-- [プロジェクト構成](#プロジェクト構成)
-- [API仕様](#api仕様)
+### Phase 1: 基本機能
+- ✅ ゲームステータス管理（積みゲー / プレイ中 / クリア済み / 100%達成）
+- ✅ プレイ時間記録（時間・分単位）
+- ✅ 星評価（0〜5）
+- ✅ カバー画像・メモ
+- ✅ プラットフォーム/ジャンル分類
 
-## 機能一覧
+### Phase 2: プレイ日記
+- ✅ ゲームごとにプレイ日記を投稿
+- ✅ 時系列表示
+- ✅ 管理者のみ投稿可能
 
-### 公開ページ
+### 統計ダッシュボード
+- ✅ 総ゲーム数 / プレイ中 / 積みゲー / 総プレイ時間
+- ✅ 積みゲー警告（5本以上で表示）
+- ✅ クリア率計算
 
-- **トップページ (`/`)**: 投稿記事の一覧表示
-- **記事詳細ページ (`/posts/[id]`)**: 個別記事の閲覧
-- **Aboutページ (`/about`)**: プロフィール・サイト情報
+### その他
+- ✅ ステータスタブでフィルタリング
+- ✅ 検索機能
+- ✅ カテゴリフィルター
+- ✅ 管理者認証（ログイン時のみ投稿・編集可能）
 
-### 管理画面
+---
 
-- **投稿記事管理 (`/admin/posts`)**
-  - 記事一覧の表示
-  - テキスト検索（タイトル・本文）
-  - カテゴリフィルター
-  - 日付範囲フィルター
-  - 検索結果件数の表示
-  - 記事の削除
+## 📂 ファイル構成
 
-- **投稿記事作成 (`/admin/posts/new`)**
-  - タイトル、本文、カバー画像URLの入力
-  - カテゴリの複数選択
-
-- **投稿記事編集 (`/admin/posts/[id]`)**
-  - 記事内容の編集
-  - **リアルタイムプレビュー機能**（編集/プレビューのタブ切り替え）
-  - HTMLタグのサニタイズ
-  - 記事の削除
-
-- **カテゴリ管理 (`/admin/categories`)**
-  - カテゴリ一覧の表示
-  - **使用状況表示**（各カテゴリに紐づく記事数）
-  - 使用中カテゴリの削除時の警告
-  - カテゴリの削除
-
-- **カテゴリ作成 (`/admin/categories/new`)**
-  - 新規カテゴリの追加
-
-- **カテゴリ編集 (`/admin/categories/[id]`)**
-  - カテゴリ名の変更
-  - カテゴリの削除
-
-## 🛠 技術スタック
-
-### フロントエンド
-
-- **Next.js 15.5.9** (App Router)
-- **React 19.1.0**
-- **TypeScript 5.x**
-- **Tailwind CSS 4.x**
-
-### バックエンド
-
-- **Prisma 7.2.0** (ORM)
-- **SQLite** (開発環境用データベース)
-- **Better SQLite3** (Prisma Adapter)
-
-### ライブラリ
-
-- **FontAwesome** (アイコン)
-- **Day.js** (日付フォーマット)
-- **isomorphic-dompurify** (HTMLサニタイズ)
-- **tailwind-merge** (Tailwindクラスの結合)
-
-## セットアップ
-
-### 必要な環境
-
-- Node.js 20.x 以上
-- npm または yarn
-
-### インストール手順
-
-1. **リポジトリのクローン**
-
-```bash
-git clone <repository-url>
-cd next-blog-app
+```
+project-root/
+├── prisma/
+│   └── schema.prisma              # GameStatus/PlayLog追加
+│
+├── src/
+│   ├── app/
+│   │   ├── _components/
+│   │   │   ├── Header.tsx         # ログイン時に「投稿」ボタン表示
+│   │   │   ├── GameCard.tsx       # ゲームカード
+│   │   │   └── PostSummary.tsx    # （GameCardと同じ）
+│   │   │
+│   │   ├── _types/
+│   │   │   └── Post.ts            # GameStatus/PlayLog型追加
+│   │   │
+│   │   ├── admin/                 # 管理画面
+│   │   ├── api/                   # APIルート
+│   │   │   └── play-logs/         # 🆕 プレイ日記API
+│   │   ├── posts/[id]/            # ゲーム詳細＋プレイ日記
+│   │   ├── login/                 # ログイン
+│   │   │
+│   │   ├── globals.css            # ダークテーマカスタムクラス
+│   │   ├── layout.tsx             # GameLib タイトル
+│   │   └── page.tsx               # トップ（統計＋タブ＋検索）
+│   │
+│   ├── lib/prisma.ts
+│   └── utils/supabase.ts
+│
+├── next.config.ts
+└── README.md
 ```
 
-2. **依存パッケージのインストール**
+---
+
+## 🚀 セットアップ手順
+
+### 1. ファイルの配置
+
+ダウンロードしたファイルをプロジェクトルートに配置してください。
 
 ```bash
-npm install
+# 既存のブログアプリのバックアップを取る（推奨）
+cp -r your-blog-app your-blog-app-backup
+
+# ダウンロードしたファイルを上書き
+# （outputs/ の中身をプロジェクトルートにコピー）
 ```
 
-3. **環境変数の設定**
-
-`.env`ファイルをプロジェクトルートに作成:
-
-```env
-DATABASE_URL="file:./dev.db"
-```
-
-4. **データベースのセットアップ**
+### 2. データベースの更新
 
 ```bash
-# Prismaスキーマからデータベースを作成
+# スキーマをデータベースに反映
 npx prisma db push
 
-# Prisma Clientを生成
+# Prisma Clientを再生成
 npx prisma generate
-
-# 初期データを投入（シードデータ）
-npx prisma db seed
 ```
 
-5. **開発サーバーの起動**
+### 3. 開発サーバー起動
 
 ```bash
 npm run dev
 ```
 
-ブラウザで http://localhost:3000 にアクセスしてください。
+http://localhost:3000 にアクセスしてください。
 
-## 使い方
+---
 
-### 初期データ
+## 🔑 初回ログイン
 
-シードデータとして以下が自動的に作成されます:
+管理者としてログインするには、Supabase の Authentication でユーザーを作成してください。
 
-- カテゴリ: 4件（カテゴリ1〜4）
-- 投稿記事: 4件（投稿1〜4）
+1. Supabase ダッシュボード → Authentication → Users → Add User
+2. メールアドレスとパスワードを設定
+3. アプリの `/login` からログイン
 
-### 管理画面へのアクセス
+---
 
-- カテゴリ管理: http://localhost:3000/admin/categories
-- 投稿記事管理: http://localhost:3000/admin/posts
+## 📝 元のブログアプリからの変更点
 
-### データベースのリセット
+### データベース（schema.prisma）
+
+```prisma
+// 追加された列
+model Post {
+  status        GameStatus     @default(UNPLAYED)
+  playTime      Int            @default(0)   // 分単位
+  rating        Int            @default(0)   // 0〜5
+  playLogs      PlayLog[]                    // 🆕 リレーション
+}
+
+// 🆕 新規テーブル
+model PlayLog {
+  id        String   @id @default(uuid())
+  postId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(...)
+}
+```
+
+### フロントエンド
+
+| ファイル | 変更内容 |
+|---|---|
+| `globals.css` | ダークテーマ用カスタムクラス追加 |
+| `layout.tsx` | タイトルを「GameLib」に変更 |
+| `Header.tsx` | ログイン時に「投稿」ボタンを表示 |
+| `page.tsx` | 統計ダッシュボード・ステータスタブ・検索追加 |
+| `posts/[id]/page.tsx` | プレイ日記セクション追加 |
+| `admin/posts/*` | status/playTime/rating フィールド追加 |
+| `_components/GameCard.tsx` | 🆕 ゲームカード（PostSummaryと同一） |
+
+### API
+
+| エンドポイント | 変更 |
+|---|---|
+| `GET /api/posts` | status/playTime/rating を返す |
+| `GET /api/posts/[id]` | playLogs も含めて返す |
+| `POST /api/admin/posts` | status/playTime/rating を受け取る |
+| `PUT /api/admin/posts/[id]` | status/playTime/rating を更新 |
+| `POST /api/play-logs` | 🆕 プレイ日記投稿 |
+
+---
+
+## 🎨 デザイン
+
+- **カラースキーム**: ダークモード（slate-900 ベース）
+- **アクセントカラー**: Purple / Indigo
+- **フォント**: システムデフォルト
+- **コンポーネント**: ラウンド角 (rounded-xl/2xl) + グラデーション
+
+---
+
+## 📌 今後の拡張案（Phase 3）
+
+- [ ] 積みゲールーレット
+- [ ] 週間プレイ時間グラフ
+- [ ] ゲームごとのスクリーンショット追加
+- [ ] 他ユーザーとの共有機能
+
+---
+
+## ⚠️ 注意事項
+
+- このアプリは**個人用**として設計されています
+- 認証はSupabase Authを使用（管理者1名想定）
+- プレイ日記は管理者のみ投稿可能
+- 環境変数（.env）は既存のものをそのまま使用
+
+---
+
+## 🛠 トラブルシューティング
+
+### エラー: `Module not found: Can't resolve '@/generated/prisma/client'`
 
 ```bash
-# 開発サーバーを停止してから実行
-rm prisma/dev.db
-npx prisma db push
 npx prisma generate
-npx prisma db seed
 ```
 
-### Prisma Studioでデータを確認
+### エラー: `Unknown column 'status'`
 
 ```bash
-npx prisma studio
+npx prisma db push
 ```
 
-ブラウザで http://localhost:5555 が開き、GUIでデータベースを確認・編集できます。
+### ログインできない
 
-## プロジェクト構成
+Supabase ダッシュボードでユーザーが作成されているか確認してください。
 
-```
-next-blog-app/
-├── prisma/
-│   ├── schema.prisma      # データベーススキーマ
-│   └── seed.ts            # シードデータ
-├── public/
-│   └── images
-├── src/
-│   ├── app/
-│   │   ├── _components/   # 共通コンポーネント
-│   │   │   ├── Header.tsx
-│   │   │   └── PostSummary.tsx
-│   │   ├── _types/        # 型定義
-│   │   │   ├── Category.ts
-│   │   │   ├── CoverImage.ts
-│   │   │   └── Post.ts
-│   │   ├── admin/         # 管理画面
-│   │   │   ├── categories/
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── new/
-│   │   │   │   └── [id]/
-│   │   │   └── posts/
-│   │   │       ├── page.tsx
-│   │   │       ├── new/
-│   │   │       └── [id]/
-│   │   ├── api/           # APIルート
-│   │   │   ├── categories/
-│   │   │   ├── posts/
-│   │   │   └── admin/
-│   │   ├── about/
-│   │   ├── posts/[id]/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx       # トップページ
-│   │   └── globals.css
-│   ├── lib/
-│   │   └── prisma.ts      # Prismaクライアント
-│   └── generated/
-│       └── prisma/        # 生成されたPrisma Client
-├── public/
-│   └── images/
-├── package.json
-├── package-lock.json
-├── tsconfig.json
-├── tailwind.config.ts
-└── README.md
-```
+---
 
-## 🔌 API仕様
-
-### カテゴリAPI
-
-| エンドポイント               | メソッド | 説明                                       | リクエストボディ   |
-| ---------------------------- | -------- | ------------------------------------------ | ------------------ |
-| `/api/categories`            | GET      | カテゴリ一覧を取得（使用中の記事数を含む） | -                  |
-| `/api/admin/categories`      | POST     | カテゴリを作成                             | `{ name: string }` |
-| `/api/admin/categories/[id]` | PUT      | カテゴリ名を変更                           | `{ name: string }` |
-| `/api/admin/categories/[id]` | DELETE   | カテゴリを削除                             | -                  |
-
-### 投稿記事API
-
-| エンドポイント          | メソッド | 説明                   | リクエストボディ                                   |
-| ----------------------- | -------- | ---------------------- | -------------------------------------------------- |
-| `/api/posts`            | GET      | 投稿記事一覧を取得     | -                                                  |
-| `/api/posts/[id]`       | GET      | 投稿記事（単体）を取得 | -                                                  |
-| `/api/admin/posts`      | POST     | 投稿記事を作成         | `{ title, content, coverImageURL, categoryIds[] }` |
-| `/api/admin/posts/[id]` | PUT      | 投稿記事を更新         | `{ title, content, coverImageURL, categoryIds[] }` |
-| `/api/admin/posts/[id]` | DELETE   | 投稿記事を削除         | -                                                  |
-
-### レスポンス例
-
-#### カテゴリ一覧取得 (`GET /api/categories`)
-
-```json
-[
-  {
-    "id": "uuid",
-    "name": "カテゴリ1",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "_count": {
-      "posts": 3
-    }
-  }
-]
-```
-
-#### 投稿記事一覧取得 (`GET /api/posts`)
-
-```json
-[
-  {
-    "id": "uuid",
-    "title": "投稿1",
-    "content": "本文...",
-    "coverImageURL": "https://example.com/image.jpg",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "categories": [
-      {
-        "category": {
-          "id": "uuid",
-          "name": "カテゴリ1"
-        }
-      }
-    ]
-  }
-]
-```
-
-## 追加機能の詳細
-
-### 1. カテゴリ使用状況表示
-
-各カテゴリに紐づいている投稿記事の数を表示。使用中のカテゴリを削除する際は警告メッセージが表示されます。
-
-### 2. 検索・フィルター機能
-
-- テキスト検索（タイトル・本文の部分一致）
-- カテゴリでの絞り込み
-- 日付範囲での絞り込み
-- 検索結果件数の表示
-
-### 3. リアルタイムプレビュー
-
-記事編集画面で「編集」と「プレビュー」をタブで切り替え可能。プレビューモードでは、入力中の内容が実際の表示イメージで確認できます。
+以上です！ 🎮

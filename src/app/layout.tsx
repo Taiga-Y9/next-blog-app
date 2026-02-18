@@ -8,21 +8,16 @@ config.autoAddCss = false;
 import Header from "@/app/_components/Header";
 
 export const metadata: Metadata = {
-  title: "NextBlogApp",
-  description: "Built to learn Next.js and modern web development.",
+  title: "GameLib - マイゲームライブラリ",
+  description: "あなただけのゲームライブラリ。積みゲー管理からプレイ記録まで。",
 };
 
-type Props = {
-  children: React.ReactNode;
-};
-
-const RootLayout: React.FC<Props> = (props) => {
-  const { children } = props;
+const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <html lang="ja">
-      <body>
+      <body className="min-h-screen bg-slate-900 text-slate-100">
         <Header />
-        <div className="mx-4 mt-2 max-w-2xl md:mx-auto">{children}</div>
+        <div className="mx-4 mt-5 max-w-3xl pb-16 md:mx-auto">{children}</div>
       </body>
     </html>
   );

@@ -1,9 +1,12 @@
 "use client";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope, faKey } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEnvelope,
+  faLock,
+  faGamepad,
+} from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
-import ValidationAlert from "../_components/ValidationAlert";
 import { supabase } from "@/utils/supabase";
 import { useRouter } from "next/navigation";
 
@@ -11,111 +14,107 @@ const Page: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
   const [loginError, setLoginError] = useState("");
-
   const router = useRouter();
 
-  const updateEmailField = (value: string) => {
-    setEmail(value);
-    if (value.length > 0 && !value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setEmailError("メールアドレスの形式で入力してください。");
-      return;
-    }
-    setEmailError("");
-  };
-
-  // フォームのログインボタンが押下されたときの処理
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setLoginError("");
-
     try {
-      console.log("ログイン処理を実行します。");
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) {
-        setLoginError(
-          `ログインIDまたはパスワードが違います（${error.code}）。`,
-        );
-        console.error(JSON.stringify(error, null, 2));
+        setLoginError("メールアドレスまたはパスワードが違います");
         return;
       }
-      console.log("ログイン処理に成功しました。");
-      router.replace("/admin");
-    } catch (error) {
-      setLoginError("ログイン処理中に予期せぬエラーが発生しました。");
-      console.error(JSON.stringify(error, null, 2));
+      router.replace("/");
+    } catch {
+      setLoginError("ログイン中にエラーが発生しました");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main>
-      <div className="mb-2 text-2xl font-bold">ログイン</div>
-      <ValidationAlert msg={loginError} />
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
-      >
-        <div className="space-y-1">
-          <label htmlFor="email" className="block font-bold">
-            <FontAwesomeIcon icon={faEnvelope} className="mr-1" />
-            ログインID（email）
-          </label>
-          <input
-            type="text"
-            id="email"
-            name="email"
-            className="w-full rounded-md border-2 px-2 py-1"
-            placeholder="hoge@example.com"
-            value={email}
-            onChange={(e) => updateEmailField(e.target.value)}
-            required
-          />
-          <ValidationAlert msg={emailError} />
+    <main className="flex min-h-[70vh] items-center justify-center">
+      <div className="w-full max-w-sm">
+        {/* アイコン & タイトル */}
+        <div className="mb-7 flex flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-xl shadow-purple-500/30">
+            <FontAwesomeIcon icon={faGamepad} className="text-3xl text-white" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-black text-white">管理者ログイン</h1>
+            <p className="mt-1 text-xs text-slate-500">
+              ゲームの追加・編集にはログインが必要です
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="password" className="block font-bold">
-            <FontAwesomeIcon icon={faKey} className="mr-1" />
-            パスワード
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            className="w-full rounded-md border-2 px-2 py-1"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        {/* エラー */}
+        {loginError && (
+          <div className="mb-4 rounded-xl border border-red-800/50 bg-red-900/30 px-4 py-3 text-sm text-red-400">
+            {loginError}
+          </div>
+        )}
 
-        <div className="flex justify-end">
+        <form
+          onSubmit={handleSubmit}
+          className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+        >
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-bold text-slate-300">
+              <FontAwesomeIcon
+                icon={faEnvelope}
+                className="text-xs text-purple-400"
+              />
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-bold text-slate-300">
+              <FontAwesomeIcon
+                icon={faLock}
+                className="text-xs text-purple-400"
+              />
+              パスワード
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+              required
+            />
+          </div>
+
           <button
             type="submit"
+            disabled={isSubmitting || !email || !password}
             className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed disabled:opacity-50",
+              "w-full rounded-xl py-3 font-black text-white transition-colors",
+              "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500",
+              "shadow-lg shadow-purple-500/25",
+              "disabled:cursor-not-allowed disabled:opacity-40",
             )}
-            disabled={
-              isSubmitting ||
-              emailError !== "" ||
-              email.length === 0 ||
-              password.length === 0
-            }
           >
-            ログイン
+            {isSubmitting ? "ログイン中..." : "ログイン"}
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </main>
   );
 };

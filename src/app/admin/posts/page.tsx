@@ -12,6 +12,8 @@ import {
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
 import dayjs from "dayjs";
+import { STATUS_MAP } from "@/app/_types/Post";
+import type { GameStatus } from "@/app/_types/Post";
 
 type PostApiResponse = {
   id: string;
@@ -20,18 +22,13 @@ type PostApiResponse = {
   coverImageURL: string;
   createdAt: string;
   updatedAt: string;
-  categories: {
-    category: {
-      id: string;
-      name: string;
-    };
-  }[];
+  status: GameStatus;
+  rating: number;
+  playTime: number;
+  categories: { category: { id: string; name: string } }[];
 };
 
-type Category = {
-  id: string;
-  name: string;
-};
+type Category = { id: string; name: string };
 
 const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,38 +36,24 @@ const Page: React.FC = () => {
   const [posts, setPosts] = useState<PostApiResponse[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // 検索・フィルター用のState
   const [searchText, setSearchText] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
-      const requestUrl = "/api/posts";
-      const res = await fetch(requestUrl, {
+      const res = await fetch("/api/posts", {
         method: "GET",
         cache: "no-store",
       });
-
-      if (!res.ok) {
-        setPosts(null);
-        const errorBody = await res.json();
-        throw new Error(errorBody.error || `${res.status}: ${res.statusText}`);
-      }
-
-      const apiResBody = (await res.json()) as PostApiResponse[];
-      setPosts(apiResBody);
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      setPosts(await res.json());
       setFetchErrorMsg(null);
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿記事の一覧のフェッチに失敗しました: ${error.message}`
-          : `予期せぬエラーが発生しました ${error}`;
-      console.error(errorMsg);
-      setFetchErrorMsg(errorMsg);
+      setFetchErrorMsg(
+        error instanceof Error ? error.message : "エラーが発生しました",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -82,39 +65,21 @@ const Page: React.FC = () => {
         method: "GET",
         cache: "no-store",
       });
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error("カテゴリの取得に失敗:", error);
+      if (res.ok) setCategories(await res.json());
+    } catch {
+      /* ignore */
     }
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`「${title}」を削除しますか？`)) {
-      return;
-    }
-
+    if (!confirm(`「${title}」を削除しますか？`)) return;
     try {
       setDeletingId(id);
-      const res = await fetch(`/api/admin/posts/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      alert("削除しました");
+      const res = await fetch(`/api/admin/posts/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       await fetchPosts();
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `削除に失敗しました: ${error.message}`
-          : `予期せぬエラーが発生しました`;
-      console.error(errorMsg);
-      alert(errorMsg);
+    } catch {
+      alert("削除に失敗しました");
     } finally {
       setDeletingId(null);
     }
@@ -123,8 +88,7 @@ const Page: React.FC = () => {
   const handleClearFilters = () => {
     setSearchText("");
     setSelectedCategoryId("");
-    setStartDate("");
-    setEndDate("");
+    setSelectedStatus("");
   };
 
   useEffect(() => {
@@ -132,232 +96,196 @@ const Page: React.FC = () => {
     fetchCategories();
   }, []);
 
-  // フィルタリング処理
   const filteredPosts = useMemo(() => {
     if (!posts) return null;
-
     return posts.filter((post) => {
-      // テキスト検索（タイトルと本文）
       if (searchText) {
-        const searchLower = searchText.toLowerCase();
-        const matchTitle = post.title.toLowerCase().includes(searchLower);
-        const matchContent = post.content.toLowerCase().includes(searchLower);
-        if (!matchTitle && !matchContent) return false;
+        const q = searchText.toLowerCase();
+        if (
+          !post.title.toLowerCase().includes(q) &&
+          !post.content.toLowerCase().includes(q)
+        )
+          return false;
       }
-
-      // カテゴリフィルター
-      if (selectedCategoryId) {
-        const hasCategory = post.categories.some(
-          (cat) => cat.category.id === selectedCategoryId,
-        );
-        if (!hasCategory) return false;
-      }
-
-      // 日付範囲フィルター
-      const postDate = dayjs(post.createdAt);
-      if (startDate && postDate.isBefore(dayjs(startDate), "day")) {
+      if (
+        selectedCategoryId &&
+        !post.categories.some((c) => c.category.id === selectedCategoryId)
+      )
         return false;
-      }
-      if (endDate && postDate.isAfter(dayjs(endDate), "day")) {
-        return false;
-      }
-
+      if (selectedStatus && post.status !== selectedStatus) return false;
       return true;
     });
-  }, [posts, searchText, selectedCategoryId, startDate, endDate]);
+  }, [posts, searchText, selectedCategoryId, selectedStatus]);
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+      <div className="mt-8 text-center text-slate-400">
+        <FontAwesomeIcon icon={faSpinner} className="mr-2 animate-spin" />
         Loading...
       </div>
     );
-  }
+  if (!posts) return <div className="text-red-400">{fetchErrorMsg}</div>;
 
-  if (!posts) {
-    return <div className="text-red-500">{fetchErrorMsg}</div>;
-  }
-
-  const dtFmt = "YYYY-MM-DD HH:mm";
-  const hasActiveFilters =
-    searchText || selectedCategoryId || startDate || endDate;
+  const hasActiveFilters = searchText || selectedCategoryId || selectedStatus;
 
   return (
-    <main>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-2xl font-bold">投稿記事の管理</div>
+    <main className="pb-10">
+      <div className="mt-2 mb-5 flex items-center justify-between">
+        <div>
+          <h1 className="page-title-accent text-2xl font-black text-white">
+            🎮 ゲーム管理
+          </h1>
+          <p className="mt-1 text-xs text-slate-500">{posts.length} 本登録中</p>
+        </div>
         <Link
           href="/admin/posts/new"
-          className={twMerge(
-            "rounded-md px-4 py-2 font-bold",
-            "bg-indigo-500 text-white hover:bg-indigo-600",
-          )}
+          className="flex items-center gap-1.5 rounded-xl bg-purple-500 px-4 py-2 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-colors hover:bg-purple-400"
         >
-          <FontAwesomeIcon icon={faPlus} className="mr-1" />
-          新規作成
+          <FontAwesomeIcon icon={faPlus} />
+          追加
         </Link>
       </div>
 
-      {/* 検索・フィルターセクション */}
-      <div className="mb-4 rounded-lg border border-slate-300 bg-slate-50 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="font-bold text-slate-700">
-            <FontAwesomeIcon icon={faSearch} className="mr-2" />
+      {/* 検索・フィルター */}
+      <div className="mb-4 rounded-2xl border border-slate-700/50 bg-slate-800/60 p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-bold text-slate-400">
+            <FontAwesomeIcon icon={faSearch} className="mr-1 text-purple-400" />
             検索・フィルター
-          </div>
+          </span>
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-xs font-semibold text-purple-400 hover:text-purple-300"
             >
               <FontAwesomeIcon icon={faTimes} className="mr-1" />
-              フィルターをクリア
+              クリア
             </button>
           )}
         </div>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          {/* テキスト検索 */}
-          <div>
-            <label className="mb-1 block text-sm font-bold">
-              タイトル・本文で検索
-            </label>
-            <input
-              type="text"
-              placeholder="検索キーワードを入力..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-
-          {/* カテゴリフィルター */}
-          <div>
-            <label className="mb-1 block text-sm font-bold">
-              カテゴリで絞り込み
-            </label>
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            >
-              <option value="">すべてのカテゴリ</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 日付範囲 */}
-          <div>
-            <label className="mb-1 block text-sm font-bold">開始日</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-bold">終了日</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
+        <div className="grid gap-2 md:grid-cols-3">
+          <input
+            type="text"
+            placeholder="タイトル・メモで検索..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+          />
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-300 focus:border-purple-500 focus:outline-none"
+          >
+            <option value="">すべてのステータス</option>
+            {(
+              Object.entries(STATUS_MAP) as [
+                GameStatus,
+                (typeof STATUS_MAP)[GameStatus],
+              ][]
+            ).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.emoji} {v.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-300 focus:border-purple-500 focus:outline-none"
+          >
+            <option value="">すべてのカテゴリ</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* 検索結果表示 */}
-      <div className="mb-3 text-sm text-gray-600">
-        {filteredPosts && (
-          <>
-            検索結果: <span className="font-bold">{filteredPosts.length}</span>{" "}
-            件
-            {posts.length !== filteredPosts.length && (
-              <span className="ml-1">（全 {posts.length} 件中）</span>
-            )}
-          </>
-        )}
+      {/* 件数 */}
+      <div className="mb-3 text-xs font-semibold text-slate-500">
+        {filteredPosts?.length ?? 0} 件表示
+        {posts.length !== (filteredPosts?.length ?? 0) &&
+          ` / 全 ${posts.length} 件`}
       </div>
 
+      {/* ゲーム一覧 */}
       {filteredPosts && filteredPosts.length === 0 ? (
-        <div className="text-gray-500">
+        <div className="py-10 text-center text-slate-500">
           {hasActiveFilters
-            ? "検索条件に一致する投稿記事が見つかりませんでした。"
-            : "（投稿記事は1個も作成されていません）"}
+            ? "条件に一致するゲームが見つかりません"
+            : "ゲームが登録されていません"}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredPosts?.map((post) => (
-            <div
-              key={post.id}
-              className="rounded-lg border border-slate-300 p-4"
-            >
-              <div className="mb-2 flex items-start justify-between">
-                <div>
-                  <div className="mb-1 text-lg font-bold">{post.title}</div>
-                  <div className="text-sm text-gray-600">
-                    作成: {dayjs(post.createdAt).format(dtFmt)} / 更新:{" "}
-                    {dayjs(post.updatedAt).format(dtFmt)}
+        <div className="space-y-2">
+          {filteredPosts?.map((post) => {
+            const statusInfo =
+              STATUS_MAP[post.status] ?? STATUS_MAP["UNPLAYED"];
+            return (
+              <div
+                key={post.id}
+                className="rounded-2xl border border-slate-700/50 bg-slate-800/60 p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span
+                        className={twMerge("status-badge", statusInfo.color)}
+                      >
+                        {statusInfo.emoji} {statusInfo.label}
+                      </span>
+                    </div>
+                    <div className="truncate font-black text-white">
+                      {post.title}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-500">
+                      登録: {dayjs(post.createdAt).format("YYYY/MM/DD")}
+                      {post.playTime > 0 && (
+                        <span className="ml-2 text-indigo-400">
+                          ⏱ {Math.floor(post.playTime / 60)}h
+                          {post.playTime % 60 > 0
+                            ? `${post.playTime % 60}m`
+                            : ""}
+                        </span>
+                      )}
+                      {post.rating > 0 && (
+                        <span className="ml-2 text-amber-400">
+                          {"★".repeat(post.rating)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Link
+                      href={`/admin/posts/${post.id}`}
+                      className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-500"
+                    >
+                      <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                      編集
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(post.id, post.title)}
+                      disabled={deletingId === post.id}
+                      className={twMerge(
+                        "rounded-xl border border-red-800/50 bg-red-900/50 px-3 py-1.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-900",
+                        deletingId === post.id && "opacity-50",
+                      )}
+                    >
+                      {deletingId === post.id ? (
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          className="animate-spin"
+                        />
+                      ) : (
+                        <FontAwesomeIcon icon={faTrash} />
+                      )}
+                    </button>
                   </div>
                 </div>
-                <div className="flex space-x-2">
-                  <Link
-                    href={`/admin/posts/${post.id}`}
-                    className={twMerge(
-                      "rounded-md px-3 py-1.5 text-sm font-bold",
-                      "bg-blue-500 text-white hover:bg-blue-600",
-                    )}
-                  >
-                    <FontAwesomeIcon icon={faEdit} className="mr-1" />
-                    編集
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(post.id, post.title)}
-                    disabled={deletingId === post.id}
-                    className={twMerge(
-                      "rounded-md px-3 py-1.5 text-sm font-bold",
-                      "bg-red-500 text-white hover:bg-red-600",
-                      deletingId === post.id && "opacity-50",
-                    )}
-                  >
-                    {deletingId === post.id ? (
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        className="animate-spin"
-                      />
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                        削除
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
-              <div className="flex space-x-1.5">
-                {post.categories.map((cat) => (
-                  <div
-                    key={cat.category.id}
-                    className={twMerge(
-                      "rounded-md px-2 py-0.5",
-                      "text-xs font-bold",
-                      "border border-slate-400 text-slate-500",
-                    )}
-                  >
-                    {cat.category.name}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>

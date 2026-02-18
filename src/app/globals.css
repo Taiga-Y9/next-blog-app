@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+/* ─── ステータスバッジ ─────────────────────────────── */
+.status-badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold;
+}
+.status-gray {
+  @apply bg-slate-600/80 text-slate-200;
+}
+.status-blue {
+  @apply bg-blue-600/80 text-blue-100;
+}
+.status-green {
+  @apply bg-emerald-600/80 text-emerald-100;
+}
+.status-gold {
+  @apply bg-yellow-500/80 text-yellow-100;
+}
+
+/* ─── ゲームカード ────────────────────────────────── */
+.game-card {
+  @apply transition-all duration-200 hover:-translate-y-0.5;
+}
+.game-card:hover {
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+}
+
+/* ─── カバー画像ラッパー ──────────────────────────── */
+.game-cover-wrap {
+  @apply relative overflow-hidden;
+}
+
+/* ─── ページタイトルアクセント ───────────────────── */
+.page-title-accent {
+  @apply relative inline-block;
+}
+.page-title-accent::after {
+  content: "";
+  @apply absolute -bottom-0.5 left-0 h-1 w-full rounded-full bg-purple-500/60;
+}
+
+/* ─── 星評価 ─────────────────────────────────────── */
+.star-rating {
+  letter-spacing: 0.05em;
+}
