@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { Post, PlayLog } from "@/app/_types/Post";
 import { STATUS_MAP } from "@/app/_types/Post";
@@ -63,7 +63,7 @@ const Page: React.FC = () => {
   const [logContent, setLogContent] = useState("");
   const [isSubmittingLog, setIsSubmittingLog] = useState(false);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/posts/${id}`, {
@@ -77,11 +77,11 @@ const Page: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchPost();
-  }, [id]);
+  }, [fetchPost]);
 
   const handleAddLog = async (e: React.FormEvent) => {
     e.preventDefault();

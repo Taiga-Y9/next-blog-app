@@ -35,7 +35,7 @@ export const POST = async (req: NextRequest) => {
         title,
         content,
         coverImageURL,
-        status: status as any,
+        status: status as "UNPLAYED" | "PLAYING" | "COMPLETED" | "PERFECT",
         playTime: playTime ?? 0,
         rating: rating ?? 0,
         categories: {
